@@ -1,1 +1,1 @@
-# Theater-Bookings-Database
+# Theater Bookings Database
