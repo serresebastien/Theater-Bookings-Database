@@ -1,4 +1,4 @@
-[🇫🇷](/README-fr.md "French")
+[🇬🇧](/README.md "Anglais")
 
 # 🎭 Theater Bookings Database 🎭
 
