@@ -1,6 +1,6 @@
-#########################################
-######    Creation des tables     #######
-#########################################
+#######################################################
+#########        Creation des tables         ##########
+#######################################################
 
 create table Theaters
 (
@@ -124,9 +124,9 @@ create table All_performance_seats_reserved
   foreign key (booking_id) references Bookings(booking_id)
 );
 
-#########################################
-######     Création des règles     ######
-#########################################
+#######################################################
+#########        Creation des règles         ##########
+#######################################################
 
 ### Création des données dans la table All_performance_seats
 
@@ -178,11 +178,9 @@ begin
   where Events_cost.event_showing_id = new.event_showing_id;
 end;
 
-
-
-#########################################
-######    Population des tables    ######
-#########################################
+#######################################################
+#########         Population de BBD          ##########
+#######################################################
 
 insert into Theaters (theater_name, theater_city, theater_address, theater_phone)
 values ('Opera Garnier', 'Paris', 'Boulevard des Capucines', '0145379674');
