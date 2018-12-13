@@ -59,6 +59,7 @@ create table Bookings
 (
   booking_id         int auto_increment,
   customer_id        int  not null,
+  theater_id         int  not null,
   event_showing_id   int  not null,
   seat_row           int  not null,
   seat_number        int  not null,
@@ -66,7 +67,8 @@ create table Bookings
   booking_made_date  date not null,
   booking_price      int  null,
   primary key (booking_id),
-  foreign key (customer_id) references Customers(customer_id)
+  foreign key (customer_id) references Customers(customer_id),
+  foreign key (theater_id) references Theaters(theater_id)
 );
 
 create table Events_cost
@@ -118,9 +120,18 @@ create table All_performance_seats_reserved
   seat_row         int  not null,
   seat_number      int  not null,
   booking_id       int  not null,
-  seat_price       int  not null,
   primary key (theater_id, seat_row, seat_number, booking_id),
   foreign key (theater_id, seat_row,seat_number) references All_performance_seats(theater_id, seat_row, seat_number),
+  foreign key (booking_id) references Bookings(booking_id)
+);
+
+create table Booking_cost
+(
+  booking_id        int          not null,
+  seat_price        int          not null,
+  booking_promotion varchar(100) not null,
+  booking_price     int          not null,
+  primary key (booking_id),
   foreign key (booking_id) references Bookings(booking_id)
 );
 
@@ -176,6 +187,27 @@ begin
   update Events_cost
   set Events_cost.event_total_income = Events_cost.event_total_income + x
   where Events_cost.event_showing_id = new.event_showing_id;
+end;
+
+### 
+
+create trigger populate_all_performance_seats_reserved after insert on Bookings
+  for each row
+begin
+  declare price int;
+  set price = (select seat_price from All_performance_seats where All_performance_seats.theater_id = new.theater_id and All_performance_seats.seat_row = new.seat_row and All_performance_seats.seat_number = new.seat_number);
+  insert into All_performance_seats_reserved (theater_id, seat_row, seat_number, booking_id, seat_price)
+  values (new.theater_id, new.seat_row, new.seat_number, new.booking_id, price);
+end;
+
+###
+
+create trigger set_booking_price after insert on All_performance_seats_reserved
+  for each row
+begin
+  update Bookings
+  set booking_price = new.seat_price
+  where booking_id = Bookings.booking_id;
 end;
 
 #######################################################
