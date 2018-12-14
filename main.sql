@@ -202,12 +202,15 @@ end;
 
 ###
 
-create trigger set_booking_price after insert on All_performance_seats_reserved
+create trigger populate_booking_cost after insert on Bookings
   for each row
 begin
-  update Bookings
-  set booking_price = new.seat_price
-  where booking_id = Bookings.booking_id;
+  declare price int;
+  declare promo varchar(100);
+  set price = (select seat_price from All_performance_seats where All_performance_seats.theater_id = new.theater_id and All_performance_seats.seat_row = new.seat_row and All_performance_seats.seat_number = new.seat_number);
+  set promo = 'Pas de promotion';
+  insert into Booking_cost (booking_id, seat_price, booking_promotion, booking_price)
+  values (new.booking_id, price, promo, price);
 end;
 
 #######################################################
