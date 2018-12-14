@@ -190,12 +190,24 @@ end;
 create trigger populate_booking_cost after insert on Bookings
   for each row
 begin
-  declare price int;
+  declare price, new_price int;
   declare promo varchar(100);
   set price = (select seat_price from All_performance_seats where All_performance_seats.theater_id = new.theater_id and All_performance_seats.seat_row = new.seat_row and All_performance_seats.seat_number = new.seat_number);
+  set new_price = price;
   set promo = 'Pas de promotion';
+  
+  if datediff(new.booking_for_date, new.booking_made_date) >= 15 then
+    set promo = 'Promotion de 20%';
+    set new_price = price * 0.8;
+  end if;
+
+  if datediff(new.booking_for_date, new.booking_made_date) = 0 then
+    set promo = 'Promotion de 30%';
+    set new_price = price * 0.7;
+  end if;
+
   insert into Booking_cost (booking_id, seat_price, booking_promotion, booking_price)
-  values (new.booking_id, price, promo, price);
+  values (new.booking_id, price, promo, new_price);
 end;
 
 #######################################################
