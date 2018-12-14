@@ -2,15 +2,12 @@
 #########        Creation des tables         ##########
 #######################################################
 
-create table Theaters
+create table Companies
 (
-  theater_id            int auto_increment,
-  theater_name          varchar(100) not null,
-  theater_city          varchar(100) not null,
-  theater_address       varchar(255) not null,
-  theater_phone         varchar(10)  not null,
-  theater_seat_capacity int          default '0',
-  primary key (theater_id)
+  company_id   int auto_increment,
+  company_name varchar(100) not null,
+  company_city varchar(100) not null,
+  primary key (company_id)
 );
 
 create table Customers
@@ -21,14 +18,6 @@ create table Customers
   customer_phone varchar(10)  not null,
   primary key (customer_id),
   constraint chk_Customers check (customer_age>=6 and customer_age<=120)
-);
-
-create table Companies
-(
-  company_id   int auto_increment,
-  company_name varchar(100) not null,
-  company_city varchar(100) not null,
-  primary key (company_id)
 );
 
 create table Events_info
@@ -42,17 +31,15 @@ create table Events_info
   foreign key (event_company_id) references Companies(company_id)
 );
 
-create table Event_showings
+create table Theaters
 (
-  event_showing_id   int auto_increment,
-  theater_id         int  null,
-  event_id           int  null,
-  showing_from_date  date null,
-  showing_to_date    date null,
-  event_showing_cost int  null,
-  primary key (event_showing_id),
-  foreign key (theater_id) references Theaters(theater_id),
-  foreign key (event_id) references Events_info(event_id)
+  theater_id            int auto_increment,
+  theater_name          varchar(100) not null,
+  theater_city          varchar(100) not null,
+  theater_address       varchar(255) not null,
+  theater_phone         varchar(10)  not null,
+  theater_seat_capacity int          default '0',
+  primary key (theater_id)
 );
 
 create table Bookings
@@ -71,7 +58,30 @@ create table Bookings
   foreign key (theater_id) references Theaters(theater_id)
 );
 
-create table Events_cost
+create table Booking_cost
+(
+  booking_id        int          not null,
+  seat_price        int          not null,
+  booking_promotion varchar(100) not null,
+  booking_price     int          not null,
+  primary key (booking_id),
+  foreign key (booking_id) references Bookings(booking_id)
+);
+
+create table Event_showings
+(
+  event_showing_id   int auto_increment,
+  theater_id         int  null,
+  event_id           int  null,
+  showing_from_date  date null,
+  showing_to_date    date null,
+  event_showing_cost int  null,
+  primary key (event_showing_id),
+  foreign key (theater_id) references Theaters(theater_id),
+  foreign key (event_id) references Events_info(event_id)
+);
+
+create table All_showings_cost
 (
   event_showing_id  int  not null,
   event_total_cost   int  default 0,
@@ -98,20 +108,7 @@ create table All_performance_seats
   seat_price       int  not null,
   primary key (theater_id, seat_row, seat_number),
   foreign key (theater_id) references Theaters(theater_id),
-  foreign key (seat_row) references Row_seats(seat_row),
-);
-
-create table All_performance_seats_reserved
-(
-  theater_id       int  not null,
-  seat_row         int  not null,
-  seat_number      int  not null,
-  seat_price       int  not null,
-  booking_id       int  not null,
-  primary key (theater_id, seat_row, seat_number),
-  foreign key (theater_id) references All_performance_seats(theater_id),
-  foreign key (seat_row) references All_performance_seats(seat_row),
-  foreign key (seat_number) references All_performance_seats(seat_number)
+  foreign key (seat_row) references Row_seats(seat_row)
 );
 
 create table All_performance_seats_reserved
@@ -122,16 +119,6 @@ create table All_performance_seats_reserved
   booking_id       int  not null,
   primary key (theater_id, seat_row, seat_number, booking_id),
   foreign key (theater_id, seat_row,seat_number) references All_performance_seats(theater_id, seat_row, seat_number),
-  foreign key (booking_id) references Bookings(booking_id)
-);
-
-create table Booking_cost
-(
-  booking_id        int          not null,
-  seat_price        int          not null,
-  booking_promotion varchar(100) not null,
-  booking_price     int          not null,
-  primary key (booking_id),
   foreign key (booking_id) references Bookings(booking_id)
 );
 
@@ -166,27 +153,27 @@ begin
   where Theaters.theater_id = new.theater_id;
 end;
 
-### Création des données dans la table Events_cost
+### Création des données dans la table All_showings_cost
 
-create trigger populate_events_cost after insert on Event_showings
+create trigger populate_all_showings_cost after insert on Event_showings
   for each row
 begin
   declare x int;
   set x = (datediff(new.showing_to_date, new.showing_from_date) * new.event_showing_cost + (select event_cost from Events_info where Events_info.event_id = new.event_id));
-  insert into Events_cost (event_showing_id, event_total_cost)
+  insert into All_showings_cost (event_showing_id, event_total_cost)
   values (new.event_showing_id, x);
 end;
 
 ### Calcul de la valeurs event_total_income de la table Event_cost
 
-create trigger update_events_cost after insert on Bookings
+create trigger update_all_showings_cost after insert on Bookings
   for each row
 begin
   declare x int;
   set x = new.booking_price;
-  update Events_cost
-  set Events_cost.event_total_income = Events_cost.event_total_income + x
-  where Events_cost.event_showing_id = new.event_showing_id;
+  update All_showings_cost
+  set All_showings_cost.event_total_income = All_showings_cost.event_total_income + x
+  where All_showings_cost.event_showing_id = new.event_showing_id;
 end;
 
 ### 
@@ -194,10 +181,8 @@ end;
 create trigger populate_all_performance_seats_reserved after insert on Bookings
   for each row
 begin
-  declare price int;
-  set price = (select seat_price from All_performance_seats where All_performance_seats.theater_id = new.theater_id and All_performance_seats.seat_row = new.seat_row and All_performance_seats.seat_number = new.seat_number);
-  insert into All_performance_seats_reserved (theater_id, seat_row, seat_number, booking_id, seat_price)
-  values (new.theater_id, new.seat_row, new.seat_number, new.booking_id, price);
+  insert into All_performance_seats_reserved (theater_id, seat_row, seat_number, booking_id)
+  values (new.theater_id, new.seat_row, new.seat_number, new.booking_id);
 end;
 
 ###
@@ -277,11 +262,11 @@ values ('Gémal Opié', '68', '0549583748');
 Insert into Customers (customer_name, customer_age, customer_phone)
 values ('Saibe Hastien', '92', '0693827345');
 
-insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('1', '1', '1', '1', '2019-11-20', '2019-01-01');
+insert into Bookings (customer_id, theater_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
+values ('1', '1', '1', '1', '1', '2019-11-20', '2019-01-01');
 
-insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('2', '1', '1', '1', '2020-02-10', '2019-01-01');
+insert into Bookings (customer_id, theater_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
+values ('2', '1', '1', '1', '1', '2020-02-10', '2019-01-01');
 
-insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('3', '1', '1', '1', '2019-04-23', '2019-01-01');
+insert into Bookings (customer_id, theater_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
+values ('3', '1', '1', '1', '1', '2019-04-23', '2019-01-01');
