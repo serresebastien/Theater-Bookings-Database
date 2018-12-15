@@ -42,6 +42,19 @@ create table Theaters
   primary key (theater_id)
 );
 
+create table Event_showings
+(
+  event_showing_id   int auto_increment,
+  theater_id         int  null,
+  event_id           int  null,
+  showing_from_date  date null,
+  showing_to_date    date null,
+  event_showing_cost int  null,
+  primary key (event_showing_id),
+  foreign key (theater_id) references Theaters(theater_id),
+  foreign key (event_id) references Events_info(event_id)
+);
+
 create table Bookings
 (
   booking_id         int auto_increment,
@@ -65,19 +78,6 @@ create table Booking_cost
   booking_price     int          not null,
   primary key (booking_id),
   foreign key (booking_id) references Bookings(booking_id)
-);
-
-create table Event_showings
-(
-  event_showing_id   int auto_increment,
-  theater_id         int  null,
-  event_id           int  null,
-  showing_from_date  date null,
-  showing_to_date    date null,
-  event_showing_cost int  null,
-  primary key (event_showing_id),
-  foreign key (theater_id) references Theaters(theater_id),
-  foreign key (event_id) references Events_info(event_id)
 );
 
 create table All_showings_cost
@@ -181,7 +181,7 @@ create trigger populate_all_performance_seats_reserved after insert on Bookings
   for each row
 begin
   insert into All_performance_seats_reserved (theater_id, seat_row, seat_number, booking_id)
-  values ((select theater_id from Event_showings where Bookings.event_showing_id = Event_showings.event_showing_id), new.seat_row, new.seat_number, new.booking_id);
+  values ((select theater_id from Event_showings where new.event_showing_id = Event_showings.event_showing_id), new.seat_row, new.seat_number, new.booking_id);
 end;
 
 ###
@@ -191,10 +191,10 @@ create trigger populate_booking_cost after insert on Bookings
 begin
   declare price, new_price int;
   declare promo varchar(100);
-  set price = (select seat_price from All_performance_seats where All_performance_seats.theater_id = new.theater_id and All_performance_seats.seat_row = new.seat_row and All_performance_seats.seat_number = new.seat_number);
+  set price = (select seat_price from All_performance_seats where All_performance_seats.theater_id = (select theater_id from Event_showings where new.event_showing_id = Event_showings.event_showing_id) and All_performance_seats.seat_row = new.seat_row and All_performance_seats.seat_number = new.seat_number);
   set new_price = price;
   set promo = 'Pas de promotion';
-  
+
   if datediff(new.booking_for_date, new.booking_made_date) >= 15 then
     set promo = 'Promotion de 20%';
     set new_price = price * 0.8;
@@ -273,11 +273,11 @@ values ('Gémal Opié', '68', '0549583748');
 Insert into Customers (customer_name, customer_age, customer_phone)
 values ('Saibe Hastien', '92', '0693827345');
 
-insert into Bookings (customer_id, theater_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('1', '1', '1', '1', '1', '2019-11-20', '2019-01-01');
+insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
+values ('1', '1', '1', '1', '2019-11-20', '2019-01-01');
 
-insert into Bookings (customer_id, theater_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('2', '1', '1', '1', '1', '2020-02-10', '2019-01-01');
+insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
+values ('2', '1', '1', '1', '2020-02-10', '2019-01-01');
 
-insert into Bookings (customer_id, theater_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('3', '1', '1', '1', '1', '2019-04-23', '2019-01-01');
+insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
+values ('3', '1', '1', '1', '2019-04-23', '2019-01-01');
