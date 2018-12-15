@@ -46,7 +46,6 @@ create table Bookings
 (
   booking_id         int auto_increment,
   customer_id        int  not null,
-  theater_id         int  not null,
   event_showing_id   int  not null,
   seat_row           int  not null,
   seat_number        int  not null,
@@ -55,7 +54,7 @@ create table Bookings
   booking_price      int  null,
   primary key (booking_id),
   foreign key (customer_id) references Customers(customer_id),
-  foreign key (theater_id) references Theaters(theater_id)
+  foreign key (event_showing_id) references Event_showings(event_showing_id)
 );
 
 create table Booking_cost
@@ -182,7 +181,7 @@ create trigger populate_all_performance_seats_reserved after insert on Bookings
   for each row
 begin
   insert into All_performance_seats_reserved (theater_id, seat_row, seat_number, booking_id)
-  values (new.theater_id, new.seat_row, new.seat_number, new.booking_id);
+  values ((select theater_id from Event_showings where Bookings.event_showing_id = Event_showings.event_showing_id), new.seat_row, new.seat_number, new.booking_id);
 end;
 
 ###
