@@ -4,3 +4,7 @@
 
 ## Diagram
 ![ScreenShot_Diagram](/img/diagram.png?raw=true "Database diagram")
+
+## Tables
+
+## Triggers
