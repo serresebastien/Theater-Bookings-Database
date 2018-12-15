@@ -7,6 +7,8 @@
 
 ## Tables
 
+### 
+
 ## Triggers
 
 ### populate_all_performance_seats
@@ -26,14 +28,13 @@ When a new row is inserted in the table **Bookings** this trigger automatically 
 
 ### populate_booking_cost
 
-
+After an insertion of a new row in the table **Bookings**, this trigger will process to populate the table **Booking_cost**.
+First we find the price of the seat that is booked, then we check when the reservation was made to know if we could apply a promotion. For this, we calculate the difference between the value *booking_for_date* and *booking_made_date*. If the different is up than 15 we apply a 20% discount, if it equal to 0 (that means the booking was made for the same day) we apply a 30% discount.
 
 ### set_theater_seat_capacity
 
-
+The purpose of this trigger is to calculate the total number of seat that a theater have and to update it in the table **Theater**. For this, we just add the number of each new row that we insert in the table **Row_seats** inside the table **Theater**.
 
 ### update_all_showings_cost
 
-
-
-
+This trigger is here to keep up to date the total theater income for an event. It is automatically calculate after an insertion in the table **Bookings** and the result is write in table **All_showings_cost**.
