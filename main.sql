@@ -82,7 +82,7 @@ create table Booking_cost
 
 create table All_showings_cost
 (
-  event_showing_id  int  not null,
+  event_showing_id   int  not null,
   event_total_cost   int  default 0,
   event_total_income int  default 0,
   estimated_cost     int  default 0,
@@ -157,8 +157,14 @@ end;
 create trigger populate_all_showings_cost after insert on Event_showings
   for each row
 begin
-  declare x int;
-  set x = (datediff(new.showing_to_date, new.showing_from_date) * new.event_showing_cost + (select event_cost from Events_info where Events_info.event_id = new.event_id));
+  declare x, y int;
+  set y = 0;
+
+  if (select theater_city from Theaters where Theaters.theater_id = new.theater_id) != (select company_city from Companies, Events_info where company_id = Events_info.event_company_id and Events_info.event_id = new.event_id) then
+    set y = 500;
+  end if;
+
+  set x = (datediff(new.showing_to_date, new.showing_from_date) * new.event_showing_cost + (select event_cost from Events_info where Events_info.event_id = new.event_id) + y);
   insert into All_showings_cost (event_showing_id, event_total_cost)
   values (new.event_showing_id, x);
 end;
@@ -277,7 +283,7 @@ insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, book
 values ('1', '1', '1', '1', '2019-11-20', '2019-01-01');
 
 insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('2', '1', '1', '1', '2020-02-10', '2019-01-01');
+values ('2', '1', '1', '2', '2020-02-10', '2019-01-01');
 
 insert into Bookings (customer_id, event_showing_id, seat_row, seat_number, booking_for_date, booking_made_date)
-values ('3', '1', '1', '1', '2019-04-23', '2019-01-01');
+values ('3', '1', '1', '3', '2019-04-23', '2019-01-01');
